@@ -1,0 +1,167 @@
+@import "tailwindcss";
+
+@theme {
+  /* Dynamic Theme Colors */
+  --color-bg-canvas: var(--bg-canvas);
+  --color-bg-workspace: var(--bg-workspace);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-interactive: var(--bg-interactive);
+  
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-inverse: var(--text-inverse);
+
+  --color-border-subtle: var(--border-subtle);
+  --color-border-medium: var(--border-medium);
+  --color-border-strong: var(--border-strong);
+
+  --color-accent-primary: #8b5cf6;
+  --color-accent-secondary: #A78BFA;
+  
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  
+  /* Typography */
+  --font-sans: 'Geist', 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+@layer base {
+  :root {
+    /* LIGHT MODE (Day) */
+    --bg-canvas: #F4F3EE;
+    --bg-workspace: #FFFFFF;
+    --bg-surface: #FAFAFA;
+    --bg-elevated: #F4F4F5;
+    --bg-interactive: #E4E4E7;
+    
+    --text-primary: #090A0C;
+    --text-secondary: #52525B;
+    --text-tertiary: #71717A;
+    --text-inverse: #FFFFFF;
+    
+    --border-subtle: rgba(0, 0, 0, 0.04);
+    --border-medium: rgba(0, 0, 0, 0.08);
+    --border-strong: rgba(0, 0, 0, 0.12);
+  }
+
+  .dark {
+    /* DARK MODE (Night - Obsidian) */
+    --bg-canvas: #0B0C0F; 
+    --bg-workspace: #111216;
+    --bg-surface: #15171C;
+    --bg-elevated: #1A1C22;
+    --bg-interactive: #202229;
+    
+    --text-primary: #F5F5F7;
+    --text-secondary: #A1A1AA;
+    --text-tertiary: #71717A;
+    --text-inverse: #000000;
+    
+    --border-subtle: rgba(255, 255, 255, 0.04);
+    --border-medium: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.12);
+  }
+
+  body {
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  /* Selection styling */
+  ::selection {
+    background-color: rgba(139, 92, 246, 0.3);
+    color: var(--text-primary);
+  }
+}
+
+@layer components {
+  /* Premium Type Scale Utilities */
+  .text-display {
+    font-size: 72px;
+    line-height: 0.95;
+    font-weight: 600;
+    letter-spacing: -0.055em;
+  }
+
+  .text-hero {
+    font-size: 64px;
+    line-height: 1;
+    font-weight: 600;
+    letter-spacing: -0.05em;
+  }
+
+  .text-page-heading {
+    font-size: 48px;
+    line-height: 1.05;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+  }
+
+  .text-section-heading {
+    font-size: 32px;
+    line-height: 1.1;
+    font-weight: 500;
+    letter-spacing: -0.03em;
+  }
+
+  /* Utility classes for subtle interactive surfaces */
+  .surface-elevated {
+    background-color: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+  }
+  
+  .surface-subtle {
+    background-color: var(--bg-surface);
+    border-radius: 10px;
+  }
+
+  /* Thin subtle borders */
+  .border-subtle {
+    border-color: var(--border-subtle);
+  }
+
+  .border-b-subtle {
+    border-bottom-color: var(--border-subtle);
+  }
+  
+  .border-t-subtle {
+    border-top-color: var(--border-subtle);
+  }
+
+  /* Primary Button */
+  .btn-primary {
+    background-color: var(--text-primary);
+    color: var(--text-inverse);
+    font-weight: 500;
+    border-radius: 10px;
+    padding: 10px 20px;
+    transition: all 0.2s ease;
+  }
+  
+  .btn-primary:hover {
+    opacity: 0.9;
+    transform: scale(0.99);
+  }
+
+  /* Secondary Button */
+  .btn-secondary {
+    background-color: transparent;
+    color: var(--text-primary);
+    border: 1px solid var(--border-medium);
+    border-radius: 10px;
+    padding: 10px 20px;
+    transition: all 0.2s ease;
+  }
+  
+  .btn-secondary:hover {
+    background-color: var(--bg-secondary);
+  }
+}
