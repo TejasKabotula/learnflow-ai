@@ -44,3 +44,7 @@ Thumbs.db
 scratch/
 tmp/
 temp/
+
+# Vector Store & Local Data (ChromaDB)
+backend/data/
+data/

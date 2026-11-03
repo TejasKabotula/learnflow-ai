@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   /* Dynamic Theme Colors */
   --color-bg-canvas: var(--bg-canvas);
@@ -17,8 +19,8 @@
   --color-border-medium: var(--border-medium);
   --color-border-strong: var(--border-strong);
 
-  --color-accent-primary: #8b5cf6;
-  --color-accent-secondary: #A78BFA;
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-secondary: var(--accent-secondary);
   
   --color-success: #22c55e;
   --color-warning: #f59e0b;
@@ -30,39 +32,55 @@
 
 @layer base {
   :root {
-    /* LIGHT MODE (Day) */
-    --bg-canvas: #F4F3EE;
-    --bg-workspace: #FFFFFF;
-    --bg-surface: #FAFAFA;
-    --bg-elevated: #F4F4F5;
-    --bg-interactive: #E4E4E7;
+    /* LIGHT MODE (Day - Frosted White with Subtle Blur) */
+    --bg-canvas: #F0F2F6;
+    --bg-workspace: rgba(247, 248, 252, 0.85);
+    --bg-surface: rgba(255, 255, 255, 0.78);
+    --bg-elevated: rgba(242, 244, 249, 0.88);
+    --bg-interactive: #E4E7ED;
     
-    --text-primary: #090A0C;
-    --text-secondary: #52525B;
-    --text-tertiary: #71717A;
+    --text-primary: #121316;
+    --text-secondary: #4B5563;
+    --text-tertiary: #6B7280;
     --text-inverse: #FFFFFF;
     
-    --border-subtle: rgba(0, 0, 0, 0.04);
-    --border-medium: rgba(0, 0, 0, 0.08);
-    --border-strong: rgba(0, 0, 0, 0.12);
+    --border-subtle: rgba(0, 0, 0, 0.06);
+    --border-medium: rgba(0, 0, 0, 0.10);
+    --border-strong: rgba(0, 0, 0, 0.16);
+    --accent-primary: #18191E;
+    --accent-secondary: #3F414D;
+    --accent-muted: #EAEAEC;
+    --sidebar-bg: rgba(255, 255, 255, 0.82);
+    --sidebar-border: rgba(0, 0, 0, 0.08);
+    --sidebar-active-bg: rgba(139, 92, 246, 0.10);
+    --sidebar-active-text: #121316;
+    --sidebar-hover-bg: rgba(0, 0, 0, 0.04);
   }
 
   .dark {
-    /* DARK MODE (Night - Obsidian) */
-    --bg-canvas: #0B0C0F; 
-    --bg-workspace: #111216;
-    --bg-surface: #15171C;
-    --bg-elevated: #1A1C22;
-    --bg-interactive: #202229;
+    /* DARK MODE (Night - Charcoal Black with Subtle Blur) */
+    --bg-canvas: #16171B; 
+    --bg-workspace: rgba(24, 25, 30, 0.85);
+    --bg-surface: rgba(30, 32, 38, 0.75);
+    --bg-elevated: rgba(38, 41, 49, 0.80);
+    --bg-interactive: rgba(48, 51, 61, 0.88);
     
-    --text-primary: #F5F5F7;
-    --text-secondary: #A1A1AA;
-    --text-tertiary: #71717A;
-    --text-inverse: #000000;
+    --text-primary: #F5F6F8;
+    --text-secondary: #9CA3AF;
+    --text-tertiary: #6B7280;
+    --text-inverse: #121316;
     
-    --border-subtle: rgba(255, 255, 255, 0.04);
-    --border-medium: rgba(255, 255, 255, 0.08);
-    --border-strong: rgba(255, 255, 255, 0.12);
+    --border-subtle: rgba(255, 255, 255, 0.07);
+    --border-medium: rgba(255, 255, 255, 0.12);
+    --border-strong: rgba(255, 255, 255, 0.18);
+    --accent-primary: #F4F4F6;
+    --accent-secondary: #C4C6D0;
+    --accent-muted: #22242E;
+    --sidebar-bg: rgba(22, 23, 27, 0.84);
+    --sidebar-border: rgba(255, 255, 255, 0.08);
+    --sidebar-active-bg: rgba(139, 92, 246, 0.16);
+    --sidebar-active-text: #F8F9FA;
+    --sidebar-hover-bg: rgba(255, 255, 255, 0.05);
   }
 
   body {
@@ -76,8 +94,18 @@
   
   /* Selection styling */
   ::selection {
-    background-color: rgba(139, 92, 246, 0.3);
+    background-color: rgba(100, 116, 139, 0.25);
     color: var(--text-primary);
+  }
+
+  /* Autofill dark mode styling */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover, 
+  input:-webkit-autofill:focus, 
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px var(--bg-canvas) inset !important;
+    -webkit-text-fill-color: var(--text-primary) !important;
+    transition: background-color 5000s ease-in-out 0s;
   }
 }
 
@@ -162,6 +190,62 @@
   }
   
   .btn-secondary:hover {
-    background-color: var(--bg-secondary);
+    background-color: var(--bg-surface);
+  }
+
+  /* Premium Card & Container Utilities */
+  .card-premium {
+    background-color: var(--bg-surface);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-subtle);
+    border-radius: 18px;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .card-premium:hover {
+    border-color: var(--border-medium);
+  }
+
+  .tactile-card {
+    background-color: var(--bg-surface);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-subtle);
+    border-radius: 18px;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  }
+
+  .focus-container {
+    background-color: var(--bg-surface);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.08);
+  }
+
+  .glass-panel {
+    background: var(--bg-surface);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-subtle);
+  }
+
+  /* Custom Slim Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-medium);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-tertiary);
   }
 }
+

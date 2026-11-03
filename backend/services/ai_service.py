@@ -82,15 +82,86 @@ class AIService:
 
 
     @staticmethod
-    def generate_summary(transcript: str, video_title: str) -> str:
-        """Generates structured study notes from video transcript using Groq or built-in NLP."""
-        system_prompt = (
-            "You are an elite academic assistant and EdTech study coach. "
-            "Your task is to transform YouTube transcripts into clear, structured, beautiful Markdown study notes. "
-            "Use clear headers, bullet points, and emphasize key concepts."
-        )
-        user_prompt = f"""
-Video Title: {video_title}
+    def generate_summary(transcript: str, video_title: str, level: str = "medium") -> str:
+        """Generates structured study notes from video transcript tailored by depth level (simple, medium, detailed)."""
+        lvl = (level or "medium").lower()
+
+        if lvl == "simple":
+            system_prompt = (
+                "You are an encouraging, expert tutor who explains complex technical topics in crystal-clear plain English (ELI5). "
+                "Use intuitive real-world analogies, friendly language, and avoid heavy jargon without sacrificing core truth."
+            )
+            user_prompt = f"""Video Title: {video_title}
+
+Transcript:
+\"\"\"{transcript[:12000]}\"\"\"
+
+Generate an intuitive, beginner-friendly explanation using this structure:
+# 🎈 Overview in Plain English
+(A 2-3 sentence executive summary that anyone can understand immediately)
+
+## 🌟 The Big Picture Analogy
+(A relatable real-world metaphor that makes the core idea instantly click)
+
+## 🎯 3 Key Takeaways to Remember
+- **Key Point 1**: Clear breakdown
+- **Key Point 2**: Clear breakdown
+- **Key Point 3**: Clear breakdown
+
+## 🔍 How It Works Step-by-Step
+### 1. The Core Idea
+(Explain the main process simply)
+
+### 2. Why We Need It
+(Explain the practical problem it solves)
+
+## 💡 Real-World Example in Action
+(A practical, concrete day-to-day scenario demonstrating this concept)
+"""
+        elif lvl == "detailed":
+            system_prompt = (
+                "You are a senior principal staff engineer and technical educator. "
+                "Produce a rigorous, publication-grade architectural deep dive study guide. "
+                "Include granular system mechanics, design trade-offs, formal definitions, and implementation nuances."
+            )
+            user_prompt = f"""Video Title: {video_title}
+
+Transcript:
+\"\"\"{transcript[:14000]}\"\"\"
+
+Generate an exhaustive, publication-grade technical study manual using this structure:
+# 🔬 Architectural Deep Dive & Systems Breakdown
+(Rigorous summary of architectural scope, system goals, and execution flow)
+
+## 🎯 Comprehensive Mental Models & Takeaways
+- **Foundational Architecture**: Deep explanation of internal mechanics
+- **Operational Guarantees**: Consistency, fault-tolerance, and scale boundaries
+- **System Constraints**: Performance bottlenecks, latency, and resource trade-offs
+- **Protocol & Design Patterns**: Interface specifications and state transitions
+
+## ⚙️ Granular Mechanics & Execution Flow
+### 1. Subsystem Architecture & Interaction Pipeline
+(Detailed dissection of component interactions and lifecycle steps)
+
+### 2. Comparative Trade-offs & Engineering Decisions
+(In-depth analysis of why this approach is selected over alternative architectures)
+
+## 💻 Technical Patterns, Best Practices & Common Anti-Patterns
+- **Production Best Practice**: Concrete design guidelines and operational heuristics
+- **Common Anti-Pattern**: Potential failure modes and prevention strategies
+
+## 📚 Complete Technical Glossary & Formal Specifications
+- **Term 1**: Precise technical definition
+- **Term 2**: Precise technical definition
+- **Term 3**: Precise technical definition
+"""
+        else: # medium (standard balanced)
+            system_prompt = (
+                "You are an elite academic assistant and EdTech study coach. "
+                "Your task is to transform YouTube transcripts into clear, structured, beautiful Markdown study notes. "
+                "Use clear headers, bullet points, and emphasize key concepts."
+            )
+            user_prompt = f"""Video Title: {video_title}
 
 Transcript:
 \"\"\"{transcript[:12000]}\"\"\"
@@ -100,17 +171,17 @@ Generate comprehensive study notes following this exact structure:
 (A concise 2-3 sentence executive summary of what this video teaches)
 
 ## 🎯 Key Takeaways
-- (Bullet point 1)
-- (Bullet point 2)
-- (Bullet point 3)
-- (Bullet point 4)
+- **Key Point 1**: Actionable explanation
+- **Key Point 2**: Actionable explanation
+- **Key Point 3**: Actionable explanation
+- **Key Point 4**: Actionable explanation
 
 ## 🧠 In-Depth Concepts Explained
-### 1. [Concept Name]
-Detailed explanation with why it matters.
+### 1. Core Mechanics
+Detailed breakdown with context.
 
-### 2. [Concept Name]
-Detailed explanation with why it matters.
+### 2. Practical Patterns
+Detailed breakdown with context.
 
 ## 💡 Practical Application & Best Practices
 - Actionable steps or code patterns shown in the video.
@@ -119,28 +190,77 @@ Detailed explanation with why it matters.
 - **Term 1**: Definition
 - **Term 2**: Definition
 """
+
         response = AIService._call_groq(system_prompt, user_prompt, temperature=0.3)
         if response:
             return response.strip()
 
-        # Fallback intelligent study note generation
-        words = transcript.split()
-        sample_length = len(words)
-        return f"""# 📌 Overview & Core Focus
+        # Dynamic fallback based on level
+        if lvl == "simple":
+            return f"""# 🎈 Overview in Plain English
+This guide breaks down **{video_title}** into simple, friendly concepts. You don't need any complex background to understand how it works!
+
+## 🌟 The Big Picture Analogy
+Think of this concept like an organized airport terminal: each counter has one specific job, signs guide passengers along predictable paths, and workers coordinate so nobody gets lost.
+
+## 🎯 3 Key Takeaways to Remember
+- **Keep It Simple**: Break complex problems into bite-sized, independent pieces.
+- **Clear Signals**: Every component needs clear instructions so things run smoothly.
+- **Practical Impact**: Using this approach saves hours of frustration and prevents common mistakes.
+
+## 🔍 How It Works Step-by-Step
+### 1. The Core Idea
+Instead of doing everything all at once, you handle each stage in a predictable sequence. This keeps your system clean and easy to troubleshoot.
+
+### 2. Why We Need It
+Without this structure, projects quickly become messy, hard to maintain, and fragile when things get busy.
+
+## 💡 Real-World Example in Action
+Imagine building with LEGO bricks: rather than gluing everything together into one giant block, you snap modular pieces together that you can easily swap out anytime.
+"""
+        elif lvl == "detailed":
+            return f"""# 🔬 Architectural Deep Dive & Systems Breakdown
+This technical specification details the architectural execution model for **{video_title}**. It explores underlying subsystem boundaries, asynchronous throughput semantics, and operational trade-offs.
+
+## 🎯 Comprehensive Mental Models & Takeaways
+- **Foundational Architecture**: Modular decomposition isolating state, execution logic, and I/O handlers.
+- **Operational Guarantees**: Deterministic execution, fault isolation, and minimal cognitive overhead.
+- **System Constraints**: Memory footprint scaling, event loop concurrency boundaries, and data synchronization overhead.
+- **Protocol Patterns**: Uniform interface conventions, typed contracts, and idempotent update operations.
+
+## ⚙️ Granular Mechanics & Execution Flow
+### 1. Subsystem Architecture & Interaction Pipeline
+The system orchestrates multi-tiered lifecycles where inbound payloads are normalized, validated through schema definitions, and routed through isolated handlers.
+
+### 2. Comparative Trade-offs & Engineering Decisions
+- **Modularity vs. Monolithic Simplicity**: Decoupled modules introduce slight routing overhead but provide order-of-magnitude improvements in testability and scalability.
+- **Asynchronous vs. Blocking Execution**: Non-blocking asynchronous event loops allow high concurrency with minimal thread pool exhaustion.
+
+## 💻 Technical Patterns, Best Practices & Common Anti-Patterns
+- **Production Best Practice**: Enforce strict boundary contracts, validate schemas at ingress, and maintain immutable data transfers.
+- **Common Anti-Pattern**: Tight coupling across layers, shared mutable global state, and unhandled async rejections.
+
+## 📚 Complete Technical Glossary & Formal Specifications
+- **Idempotence**: An operation that can be applied multiple times without changing the result beyond the initial application.
+- **Active Recall**: The cognitive principle of retrieving information from memory to solidify neural pathways.
+- **Throughput Latency Bound**: The statistical upper limit on processing time under peak load conditions.
+"""
+        else:
+            return f"""# 📌 Overview & Core Focus
 This study module covers **{video_title}**. It provides structured, foundational knowledge and practical walkthroughs designed to accelerate your mastery of the subject matter.
 
 ## 🎯 Key Takeaways
 - **Foundational Architecture**: Understand the fundamental concepts and core components presented in the lesson.
 - **Hands-on Implementation**: Direct walkthrough of real-world patterns, practical setups, and best practices.
-- **Workflow Efficiency**: Eliminates common pitfalls and establishes streamlined development/study habits.
+- **Workflow Efficiency**: Eliminates common pitfalls and establishes streamlined development habits.
 - **Actionable Execution**: Clear steps to apply these concepts immediately in projects and assessments.
 
 ## 🧠 In-Depth Concepts Explained
 ### 1. Core Mechanics of {video_title}
-The lesson highlights how each component interacts within the broader system. By breaking down complex requirements into modular, testable steps, learners can grasp nuances without cognitive overload.
+The lesson highlights how each component interacts within the broader system. By breaking down complex requirements into modular steps, learners grasp nuances without cognitive overload.
 
 ### 2. Strategic Best Practices & Conventions
-Emphasizes modern industry conventions: maintainability, error resilience, and optimized workflows. The instructor guides through step-by-step reasoning rather than rote memorization.
+Emphasizes modern industry conventions: maintainability, error resilience, and optimized workflows.
 
 ## 💡 Practical Application & Best Practices
 - Set up an isolated sandbox environment before beginning implementation.
@@ -154,25 +274,34 @@ Emphasizes modern industry conventions: maintainability, error resilience, and o
 """
 
     @staticmethod
-    def generate_quiz(transcript: str, video_title: str) -> List[Dict[str, Any]]:
-        """Generates 4-5 multiple choice questions with pure JSON output."""
+    def generate_quiz(
+        transcript: str, 
+        video_title: str, 
+        difficulty: str = "mixed", 
+        count: int = 4,
+        offset: int = 0
+    ) -> List[Dict[str, Any]]:
+        """Generates multiple choice questions with dynamic difficulty, count, and offset for unlimited generation."""
+        diff = (difficulty or "mixed").lower()
+        temp = 0.2 + (offset % 5) * 0.08
+
         system_prompt = (
-            "You are an expert test creator. Create high quality multiple-choice questions (MCQs) based on the text. "
+            f"You are an expert test creator. Create {count} distinct, high quality {diff}-difficulty multiple-choice questions (MCQs) based on the text. "
             "Output strictly a valid JSON array of objects. Do not include markdown codeblocks or conversational text. "
-            "Format: [{\"id\": 1, \"question\": \"...\", \"options\": [\"A) ...\", \"B) ...\", \"C) ...\", \"D) ...\"], \"answer\": \"A\", \"explanation\": \"...\"}]"
+            'Format: [{"id": 1, "question": "...", "options": ["A) ...", "B) ...", "C) ...", "D) ..."], "answer": "A", "explanation": "..."}]'
         )
-        user_prompt = f"""
-Video Title: {video_title}
+        user_prompt = f"""Video Title: {video_title}
+Difficulty: {diff.upper()}
+Seed Offset: {offset}
 
 Content:
-\"\"\"{transcript[:10000]}\"\"\"
+\"\"\"{transcript[:12000]}\"\"\"
 
-Generate 4 challenging multiple-choice questions to test the student's understanding.
+Generate {count} unique, non-trivial multiple-choice questions focusing on critical insights from this lecture.
 Return ONLY the raw JSON array.
 """
-        raw_response = AIService._call_groq(system_prompt, user_prompt, temperature=0.2)
+        raw_response = AIService._call_groq(system_prompt, user_prompt, temperature=temp)
         if raw_response:
-            # Substring extraction / JSON cleanup
             try:
                 cleaned = raw_response.strip()
                 match = re.search(r'\[.*\]', cleaned, re.DOTALL)
@@ -180,17 +309,20 @@ Return ONLY the raw JSON array.
                     json_str = match.group(0)
                     quiz_data = json.loads(json_str)
                     if isinstance(quiz_data, list) and len(quiz_data) > 0:
-                        return quiz_data
+                        # Re-index ids
+                        for i, q in enumerate(quiz_data):
+                            q["id"] = i + 1 + (offset * 10)
+                        return quiz_data[:count]
             except Exception as e:
                 print(f"[AIService] Failed to parse Groq quiz JSON: {e}")
 
-        # Fallback high quality quiz questions
-        return [
+        # Fallback question pool customized by offset & difficulty
+        pool = [
             {
-                "id": 1,
-                "question": f"What is the primary objective explained in '{video_title}'?",
+                "id": 1 + (offset * 10),
+                "question": f"What is the primary architectural concept emphasized in '{video_title}'?",
                 "options": [
-                    "A) Mastering foundational concepts and practical implementation",
+                    "A) Mastering foundational design principles and execution logic",
                     "B) Memorizing obsolete legacy configurations",
                     "C) Disabling all error handling routines",
                     "D) Creating unmaintainable monolithic files"
@@ -199,8 +331,8 @@ Return ONLY the raw JSON array.
                 "explanation": f"The core focus of '{video_title}' is building an intuitive, hands-on understanding of core principles."
             },
             {
-                "id": 2,
-                "question": "Which approach is strongly recommended for effective learning and retention?",
+                "id": 2 + (offset * 10),
+                "question": "Which strategy yields the highest retention and conceptual mastery?",
                 "options": [
                     "A) Passive multi-hour video bingeing without notes",
                     "B) Active recall, structured note-taking, and hands-on practice",
@@ -211,30 +343,46 @@ Return ONLY the raw JSON array.
                 "explanation": "Active learning with structured quizzes and conceptual clarification yields significantly higher retention rates."
             },
             {
-                "id": 3,
+                "id": 3 + (offset * 10),
                 "question": "Why is modular system design favored in modern application architecture?",
                 "options": [
                     "A) It makes components harder to test and debug",
                     "B) It increases cognitive overload",
-                    "C) It provides separation of concerns and maintainability",
+                    "C) It provides separation of concerns, testability, and maintainability",
                     "D) It prevents code reusability"
                 ],
                 "answer": "C",
                 "explanation": "Modularity allows developers to isolate concerns, test independently, and scale components seamlessly."
             },
             {
-                "id": 4,
-                "question": "When encountering a complex topic, what is the best strategy for mastery?",
+                "id": 4 + (offset * 10),
+                "question": "When debugging an unexpected system bottleneck, what is the best diagnostic approach?",
                 "options": [
-                    "A) Break the concept into simple real-world analogies and test with practice questions",
-                    "B) Give up immediately",
-                    "C) Assume the topic is impossible to learn",
-                    "D) Rely solely on superficial definitions"
+                    "A) Inspect latency profiles, isolate subsystem boundaries, and review logs",
+                    "B) Restart the machine and hope the error goes away",
+                    "C) Delete all unit tests",
+                    "D) Increase random sleeps in the code"
                 ],
                 "answer": "A",
-                "explanation": "Translating abstract technical problems into intuitive analogies bridges the gap between theory and practical application."
+                "explanation": "Systematic isolation of subsystem boundaries and reviewing telemetry logs is the industry standard for diagnosing root causes."
+            },
+            {
+                "id": 5 + (offset * 10),
+                "question": f"According to '{video_title}', what distinction separates beginner and advanced implementations?",
+                "options": [
+                    "A) Advanced systems prioritize resilience, clean contracts, and deterministic state",
+                    "B) Advanced systems have zero documentation",
+                    "C) Advanced systems ignore error cases",
+                    "D) Advanced systems run everything in a single global function"
+                ],
+                "answer": "A",
+                "explanation": "Production-grade architectures establish clear invariants, error handling, and deterministic state transitions."
             }
         ]
+        # Rotate pool based on offset
+        start_idx = offset % len(pool)
+        rotated = pool[start_idx:] + pool[:start_idx]
+        return rotated[:count]
 
     @staticmethod
     def clarify_concept(concept: str, context: Optional[str] = None) -> Dict[str, Any]:

@@ -1,21 +1,24 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeProvider';
 import { 
   LogOut, 
   LayoutDashboard, 
-  Library, 
-  BrainCircuit, 
-  ChevronLeft, 
-  ChevronRight, 
-  Search, 
+  BookOpen, 
+  Sparkles, 
   Bookmark, 
   FileText, 
   HelpCircle, 
   Settings, 
   User, 
   Menu, 
-  X 
+  X,
+  Search,
+  Pin,
+  PinOff,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThemeToggle } from './ThemeToggle';
@@ -23,6 +26,7 @@ import { SearchModal } from './SearchModal';
 
 export const Layout = () => {
   const { user, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
   const location = useLocation();
 
   // Search Modal state
@@ -31,18 +35,21 @@ export const Layout = () => {
   // Mobile sidebar open state
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Initialize collapsed state from localStorage, defaulting to false (expanded) on large screens
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    const saved = localStorage.getItem('sidebarCollapsed');
-    if (saved !== null) {
-      return saved === 'true';
-    }
-    return window.innerWidth < 1280;
+  // Pin state for desktop sidebar (persisted in localStorage, defaults to open on desktop)
+  const [isPinned, setIsPinned] = useState(() => {
+    const saved = localStorage.getItem('sidebarPinned');
+    return saved !== null ? saved === 'true' : true;
   });
 
+  // Hover expansion state
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Sidebar is visually expanded if pinned OR hovered
+  const isExpanded = isPinned || isHovered;
+
   useEffect(() => {
-    localStorage.setItem('sidebarCollapsed', isCollapsed.toString());
-  }, [isCollapsed]);
+    localStorage.setItem('sidebarPinned', isPinned.toString());
+  }, [isPinned]);
 
   // Global Ctrl+K / Cmd+K listener
   useEffect(() => {
@@ -62,20 +69,20 @@ export const Layout = () => {
   }, [location.pathname]);
 
   const navItems = [
-    { name: 'Overview', path: '/', icon: <LayoutDashboard size={18} strokeWidth={2} /> },
-    { name: 'Courses', path: '/courses', icon: <Library size={18} strokeWidth={2} /> },
-    { name: 'AI Studio', path: '/ai-learning', icon: <BrainCircuit size={18} strokeWidth={2} /> },
+    { name: 'Overview', path: '/', icon: <LayoutDashboard size={18} strokeWidth={1.9} /> },
+    { name: 'Courses', path: '/courses', icon: <BookOpen size={18} strokeWidth={1.9} /> },
+    { name: 'AI Studio', path: '/ai-learning', icon: <Sparkles size={18} strokeWidth={1.9} /> },
   ];
 
   const libraryItems = [
-    { name: 'Saved', path: '/saved', icon: <Bookmark size={18} strokeWidth={2} /> },
-    { name: 'Notes', path: '/notes', icon: <FileText size={18} strokeWidth={2} /> },
-    { name: 'Quizzes', path: '/quizzes', icon: <HelpCircle size={18} strokeWidth={2} /> },
+    { name: 'Saved', path: '/saved', icon: <Bookmark size={18} strokeWidth={1.9} /> },
+    { name: 'Notes', path: '/notes', icon: <FileText size={18} strokeWidth={1.9} /> },
+    { name: 'Quizzes', path: '/quizzes', icon: <HelpCircle size={18} strokeWidth={1.9} /> },
   ];
 
   const bottomItems = [
-    { name: 'Settings', path: '/settings', icon: <Settings size={18} strokeWidth={2} /> },
-    { name: 'Account', path: '/account', icon: <User size={18} strokeWidth={2} /> },
+    { name: 'Settings', path: '/settings', icon: <Settings size={18} strokeWidth={1.9} /> },
+    { name: 'Account', path: '/account', icon: <User size={18} strokeWidth={1.9} /> },
   ];
 
   const getBreadcrumb = () => {
@@ -100,26 +107,31 @@ export const Layout = () => {
         <Link
           key={item.name}
           to={item.path}
-          className={`relative flex items-center gap-4 px-3 py-2.5 rounded-lg transition-colors duration-200 group text-sm
-            ${isActive ? 'text-[var(--text-primary)] bg-[rgba(255,255,255,0.06)] font-medium' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.03)]'}
-            ${isCollapsed ? 'justify-center' : ''}`}
+          className={`relative flex items-center gap-3.5 px-3 py-2.5 rounded-xl transition-all duration-150 group text-sm select-none
+            ${isActive 
+              ? 'text-[var(--sidebar-active-text)] bg-[var(--sidebar-active-bg)] font-medium shadow-[0_1px_2px_rgba(0,0,0,0.03)]' 
+              : 'text-[var(--sidebar-text)] hover:text-[var(--sidebar-text-hover)] hover:bg-[var(--sidebar-hover-bg)]'
+            }
+            ${!isExpanded ? 'justify-center px-0' : ''}`}
         >
-          {/* Active Indicator Line */}
+          {/* Active Accent Indicator */}
           {isActive && (
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[var(--color-accent-primary)] rounded-r-full" />
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[var(--sidebar-active-text)] rounded-r-full" />
           )}
           
-          <div className={`${isActive ? 'text-[var(--color-accent-primary)]' : 'text-[var(--text-tertiary)] group-hover:text-[var(--text-secondary)]'} transition-colors duration-200 shrink-0`}>
+          <div className={`${isActive ? 'text-[var(--sidebar-active-text)]' : 'text-[var(--sidebar-text)] group-hover:text-[var(--sidebar-text-hover)]'} transition-colors duration-150 shrink-0`}>
             {item.icon}
           </div>
           
-          {!isCollapsed && (
-            <span className="whitespace-nowrap">{item.name}</span>
+          {isExpanded && (
+            <span className="whitespace-nowrap overflow-hidden text-ellipsis tracking-tight">
+              {item.name}
+            </span>
           )}
 
-          {/* Tooltip for collapsed state */}
-          {isCollapsed && (
-            <div className="absolute left-full ml-4 px-2.5 py-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50 pointer-events-none shadow-lg">
+          {/* Accessible Tooltip for collapsed state */}
+          {!isExpanded && (
+            <div className="absolute left-full ml-3.5 px-2.5 py-1 bg-slate-900 dark:bg-slate-800 text-white text-xs font-medium rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 whitespace-nowrap z-50 pointer-events-none shadow-xl border border-white/10">
               {item.name}
             </div>
           )}
@@ -134,49 +146,79 @@ export const Layout = () => {
       {/* Global Search Modal */}
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 
-      {/* Desktop Sidebar Navigation */}
-      <motion.aside 
-        initial={false}
-        animate={{ width: isCollapsed ? 72 : 260 }}
-        transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
-        className="hidden md:flex bg-[var(--bg-canvas)] border-r border-[var(--border-subtle)] flex-col justify-between py-6 px-3 z-20 shrink-0 relative"
-      >
-        {/* Toggle Button */}
-        <button 
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="absolute -right-3 top-8 w-6 h-6 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-full flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] z-30 shadow-sm transition-colors"
-        >
-          {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-        </button>
+      {/* Layout Spacer for Desktop: Keeps main content position smoothly aligned with sidebar */}
+      <div 
+        style={{ width: isExpanded ? 240 : 68 }} 
+        className="hidden md:block shrink-0 transition-[width] duration-280 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-none" 
+      />
 
+      {/* Desktop Sidebar Attached to Left Corner */}
+      <motion.aside 
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        initial={false}
+        animate={{ width: isExpanded ? 240 : 68 }}
+        transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+        className="fixed left-0 top-0 bottom-0 z-40 hidden md:flex flex-col justify-between py-5 px-3 rounded-none bg-[var(--sidebar-bg)] backdrop-blur-2xl border-r border-[var(--sidebar-border)] select-none overflow-hidden"
+      >
         <div className="overflow-hidden">
-          {/* Logo Area */}
-          <Link to="/" className={`flex items-center gap-3 mb-10 ${isCollapsed ? 'justify-center px-0' : 'px-2'}`}>
-            <div className="w-7 h-7 rounded bg-[var(--bg-surface)] border border-[var(--border-medium)] flex items-center justify-center text-[var(--text-primary)] font-bold text-sm shadow-[0_0_10px_rgba(139,92,246,0.15)] shrink-0">
-              L
-            </div>
-            {!isCollapsed && (
-              <h1 className="text-sm font-semibold tracking-wide text-[var(--text-primary)] whitespace-nowrap">
-                LEARN FLOW
-              </h1>
+          {/* Brand Header */}
+          <div className={`flex items-center ${isExpanded ? 'justify-between px-1.5' : 'justify-center px-0'} mb-7 pt-1`}>
+            <Link to="/" className="flex items-center gap-3 group">
+              {/* Minimal Brand Mark Tile */}
+              <div className="w-8 h-8 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-medium)] flex items-center justify-center text-[var(--text-primary)] font-bold text-sm shadow-[0_0_12px_rgba(139,92,246,0.25)] shrink-0 transition-transform duration-200 group-hover:scale-105">
+                L
+              </div>
+              {isExpanded && (
+                <div className="whitespace-nowrap overflow-hidden">
+                  <span className="font-semibold text-sm tracking-tight text-[var(--text-primary)]">
+                    LEARN FLOW <span className="font-bold text-[var(--text-primary)] opacity-80">AI</span>
+                  </span>
+                </div>
+              )}
+            </Link>
+
+            {/* Pin / Unpin Button (Only shown when expanded) */}
+            {isExpanded && (
+              <button 
+                onClick={() => setIsPinned(!isPinned)}
+                aria-label={isPinned ? "Unpin sidebar" : "Pin sidebar"}
+                className={`p-1.5 rounded-lg text-xs transition-colors ${
+                  isPinned 
+                    ? 'text-[var(--sidebar-active-text)] bg-[var(--sidebar-active-bg)]' 
+                    : 'text-[var(--sidebar-text)] hover:text-[var(--sidebar-text-hover)] hover:bg-[var(--sidebar-hover-bg)]'
+                }`}
+                title={isPinned ? "Unpin sidebar (collapse to hover mode)" : "Pin sidebar"}
+              >
+                {isPinned ? <PinOff size={14} /> : <Pin size={14} />}
+              </button>
             )}
-          </Link>
+          </div>
           
-          <div className="space-y-8">
-            {/* Main Navigation */}
+          <div className="space-y-6">
+            {/* Workspace Section */}
             <div>
-              {!isCollapsed && <span className="px-2 text-[10px] font-semibold text-[var(--text-tertiary)] tracking-widest uppercase mb-3 block">Workspace</span>}
-              {isCollapsed && <div className="h-[1px] w-8 mx-auto bg-[var(--border-subtle)] mb-4" />}
+              {isExpanded ? (
+                <span className="px-2 text-[10px] font-semibold text-slate-400 dark:text-slate-500 tracking-wider uppercase mb-2 block">
+                  Workspace
+                </span>
+              ) : (
+                <div className="h-[1px] w-6 mx-auto bg-slate-200/60 dark:bg-white/[0.06] mb-3" />
+              )}
               <nav className="space-y-1">
                 {renderNavItems(navItems)}
               </nav>
             </div>
 
-            {/* Secondary Navigation */}
+            {/* Library Section */}
             <div>
-              {!isCollapsed && <span className="px-2 text-[10px] font-semibold text-[var(--text-tertiary)] tracking-widest uppercase mb-3 block">Library</span>}
-              {isCollapsed && <div className="h-[1px] w-8 mx-auto bg-[var(--border-subtle)] mb-4" />}
+              {isExpanded ? (
+                <span className="px-2 text-[10px] font-semibold text-slate-400 dark:text-slate-500 tracking-wider uppercase mb-2 block">
+                  Library
+                </span>
+              ) : (
+                <div className="h-[1px] w-6 mx-auto bg-slate-200/60 dark:bg-white/[0.06] mb-3" />
+              )}
               <nav className="space-y-1">
                 {renderNavItems(libraryItems)}
               </nav>
@@ -184,37 +226,85 @@ export const Layout = () => {
           </div>
         </div>
 
-        {/* Bottom User Area */}
-        <div className="space-y-2 overflow-hidden pb-2">
-          <nav className="space-y-1 mb-4">
+        {/* Footer Area */}
+        <div className="space-y-2 pt-3 border-t border-[var(--sidebar-border)] overflow-hidden">
+          {/* Preferences Navigation */}
+          <nav className="space-y-1">
              {renderNavItems(bottomItems)}
           </nav>
 
-          <div className="flex justify-center mb-4">
-             <ThemeToggle />
-          </div>
-          
-          <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between px-2'} gap-3 text-sm`}>
-            {!isCollapsed && (
-              <Link to="/account" className="flex-1 truncate text-[12px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
-                {user?.email || 'Student'}
-              </Link>
-            )}
-            
-            <button 
-              onClick={logout}
-              className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors shrink-0 p-2 group relative"
-              title="Logout"
-              aria-label="Logout"
-            >
-              <LogOut size={16} strokeWidth={2} />
-              {isCollapsed && (
-                <div className="absolute left-full ml-4 px-2 py-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50 pointer-events-none shadow-lg">
-                  Logout
+          {/* Theme Toggle: Full 3-state toggle when expanded, compact 1-click toggle when collapsed */}
+          {isExpanded ? (
+            <div className="flex justify-start px-1 py-1">
+               <ThemeToggle />
+            </div>
+          ) : (
+            <div className="flex justify-center py-1">
+              <button
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="w-8 h-8 flex items-center justify-center rounded-xl text-[var(--sidebar-text)] hover:text-[var(--sidebar-text-hover)] hover:bg-[var(--sidebar-hover-bg)] transition-colors relative group"
+                title={`Current theme: ${theme} (click to toggle)`}
+                aria-label="Toggle theme"
+              >
+                {theme === 'dark' ? <Moon size={16} /> : <Sun size={16} />}
+                <div className="absolute left-full ml-3.5 px-2.5 py-1 bg-slate-900 dark:bg-slate-800 text-white text-xs font-medium rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 whitespace-nowrap z-50 pointer-events-none shadow-xl border border-white/10">
+                  Toggle theme
                 </div>
-              )}
-            </button>
-          </div>
+              </button>
+            </div>
+          )}
+          
+          {/* User Account / Logout Profile */}
+          {isExpanded ? (
+            <div className="flex items-center justify-between px-2 pt-1 gap-2 text-sm">
+              <Link 
+                to="/account" 
+                className="flex items-center gap-2.5 flex-1 min-w-0 text-[var(--sidebar-text)] hover:text-[var(--sidebar-text-hover)] transition-colors"
+                title={user?.email || 'Account'}
+              >
+                <div className="w-6 h-6 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-950 flex items-center justify-center text-[10px] font-bold shrink-0">
+                  {user?.full_name ? user.full_name.charAt(0).toUpperCase() : user?.email ? user.email.charAt(0).toUpperCase() : 'U'}
+                </div>
+                <span className="truncate text-xs font-medium">
+                  {user?.full_name || user?.email?.split('@')[0] || 'Learner'}
+                </span>
+              </Link>
+              
+              <button 
+                onClick={logout}
+                className="text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors shrink-0 p-1.5 rounded-lg hover:bg-rose-500/10"
+                title="Logout"
+                aria-label="Logout"
+              >
+                <LogOut size={16} strokeWidth={1.9} />
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-1.5 pt-1">
+              <Link 
+                to="/account" 
+                className="w-8 h-8 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-950 flex items-center justify-center text-[11px] font-bold shrink-0 hover:ring-2 hover:ring-slate-400/40 transition-all group relative"
+                aria-label="View Account"
+              >
+                {user?.full_name ? user.full_name.charAt(0).toUpperCase() : user?.email ? user.email.charAt(0).toUpperCase() : 'U'}
+                <div className="absolute left-full ml-3.5 px-2.5 py-1 bg-slate-900 dark:bg-slate-800 text-white text-xs font-medium rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 whitespace-nowrap z-50 pointer-events-none shadow-xl border border-white/10">
+                  {user?.email || 'Account'}
+                </div>
+              </Link>
+
+              <button 
+                onClick={logout}
+                className="w-8 h-8 flex items-center justify-center rounded-xl text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-500/10 transition-colors group relative"
+                title="Logout"
+                aria-label="Logout"
+              >
+                <LogOut size={16} strokeWidth={1.9} />
+                <div className="absolute left-full ml-3.5 px-2.5 py-1 bg-slate-900 dark:bg-slate-800 text-white text-xs font-medium rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 whitespace-nowrap z-50 pointer-events-none shadow-xl border border-white/10">
+                  Log out
+                </div>
+              </button>
+            </div>
+          )}
         </div>
       </motion.aside>
 
@@ -222,42 +312,40 @@ export const Layout = () => {
       <main className="flex-1 bg-[var(--bg-workspace)] overflow-y-auto relative transition-colors duration-300">
         
         {/* Top Utility Bar */}
-        <header className="sticky top-0 z-10 bg-[var(--bg-workspace)]/80 backdrop-blur-md border-b border-[var(--border-subtle)] px-6 lg:px-16 2xl:px-24 h-14 flex items-center justify-between">
+        <header className="sticky top-0 z-10 bg-[var(--bg-workspace)]/85 backdrop-blur-xl border-b border-[var(--border-subtle)] px-6 lg:px-8 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Mobile Hamburger Toggle */}
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+              className="md:hidden p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
               aria-label="Open Navigation"
             >
               <Menu size={18} />
             </button>
 
-            <div className="text-xs text-[var(--text-tertiary)] font-medium tracking-widest uppercase">
+            <div className="text-xs text-slate-400 dark:text-slate-500 font-medium tracking-wider uppercase">
               {getBreadcrumb()}
             </div>
           </div>
           
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-4">
             <button 
               onClick={() => setIsSearchOpen(true)}
-              className="flex items-center gap-2 text-xs text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors bg-[var(--bg-canvas)] border border-[var(--border-medium)] px-3 py-1.5 rounded-lg"
+              className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors bg-[var(--bg-canvas)] border border-[var(--border-medium)] px-3 py-1.5 rounded-lg"
             >
               <Search size={14} />
-              <span className="hidden sm:inline">Search</span>
-              <kbd className="hidden sm:inline-block ml-1 px-1.5 py-0.2 rounded bg-[var(--bg-surface)] border border-[var(--border-medium)] text-[10px] font-sans">
+              <span className="hidden sm:inline">Search videos, courses</span>
+              <kbd className="hidden sm:inline-block ml-1 px-1.5 py-0.5 rounded bg-[var(--bg-surface)] border border-[var(--border-medium)] text-[10px] font-sans">
                 ⌘K
               </kbd>
             </button>
 
             <Link 
               to="/account" 
-              className="w-7 h-7 rounded-full bg-[var(--bg-surface)] border border-[var(--border-medium)] flex items-center justify-center overflow-hidden hover:border-[var(--color-accent-primary)] transition-colors"
+              className="w-7 h-7 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-950 flex items-center justify-center text-[10px] font-bold shadow-sm hover:opacity-90 transition-opacity"
               title="View Account"
             >
-              <span className="text-[10px] font-semibold text-[var(--text-secondary)]">
-                {user?.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
-              </span>
+              {user?.full_name ? user.full_name.charAt(0).toUpperCase() : user?.email ? user.email.charAt(0).toUpperCase() : 'U'}
             </Link>
           </div>
         </header>
@@ -266,46 +354,58 @@ export const Layout = () => {
         <AnimatePresence>
           {mobileMenuOpen && (
             <div className="fixed inset-0 z-50 flex md:hidden">
-              <div 
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 className="fixed inset-0 bg-black/60 backdrop-blur-sm"
                 onClick={() => setMobileMenuOpen(false)}
               />
               <motion.div
-                initial={{ x: -260 }}
+                initial={{ x: -280 }}
                 animate={{ x: 0 }}
-                exit={{ x: -260 }}
-                className="relative w-64 bg-[var(--bg-canvas)] border-r border-[var(--border-subtle)] h-full p-6 flex flex-col justify-between z-10"
+                exit={{ x: -280 }}
+                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                className="relative w-72 bg-[var(--bg-canvas)] border-r border-[var(--border-subtle)] h-full p-6 flex flex-col justify-between z-10 shadow-2xl"
               >
                 <div>
                   <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-3">
-                      <div className="w-7 h-7 rounded bg-[var(--bg-surface)] border border-[var(--border-medium)] flex items-center justify-center font-bold text-sm">
+                      <div className="w-8 h-8 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-medium)] flex items-center justify-center text-[var(--text-primary)] font-bold text-sm shadow-[0_0_12px_rgba(139,92,246,0.25)]">
                         L
                       </div>
-                      <span className="font-semibold text-sm">LEARN FLOW</span>
+                      <span className="font-semibold text-sm tracking-tight text-[var(--text-primary)]">
+                        LEARN FLOW <span className="font-bold text-[var(--text-primary)] opacity-80">AI</span>
+                      </span>
                     </div>
-                    <button onClick={() => setMobileMenuOpen(false)} className="p-1 text-[var(--text-tertiary)]">
+                    <button onClick={() => setMobileMenuOpen(false)} className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
                       <X size={18} />
                     </button>
                   </div>
 
                   <div className="space-y-6">
                     <div>
-                      <span className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-widest block mb-2">Workspace</span>
+                      <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 px-1">
+                        Workspace
+                      </span>
                       <nav className="space-y-1">
                         {renderNavItems(navItems)}
                       </nav>
                     </div>
 
                     <div>
-                      <span className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-widest block mb-2">Library</span>
+                      <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 px-1">
+                        Library
+                      </span>
                       <nav className="space-y-1">
                         {renderNavItems(libraryItems)}
                       </nav>
                     </div>
 
                     <div>
-                      <span className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-widest block mb-2">Settings</span>
+                      <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 px-1">
+                        Preferences
+                      </span>
                       <nav className="space-y-1">
                         {renderNavItems(bottomItems)}
                       </nav>
@@ -315,7 +415,7 @@ export const Layout = () => {
 
                 <div className="pt-4 border-t border-[var(--border-subtle)] flex items-center justify-between">
                   <ThemeToggle />
-                  <button onClick={logout} className="text-xs text-[var(--text-tertiary)] hover:text-[var(--text-primary)] flex items-center gap-1.5">
+                  <button onClick={logout} className="text-xs text-slate-500 hover:text-rose-500 flex items-center gap-1.5 py-1 px-2 rounded-lg">
                     <LogOut size={14} />
                     <span>Logout</span>
                   </button>
@@ -325,15 +425,16 @@ export const Layout = () => {
           )}
         </AnimatePresence>
 
-        <div className="px-6 py-10 lg:px-16 2xl:px-24">
+        {/* Page Content Viewport */}
+        <div className="px-6 py-8 lg:px-10">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              className="max-w-[1280px] mx-auto h-full"
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="max-w-[1340px] mx-auto h-full"
             >
               <Outlet />
             </motion.div>

@@ -23,3 +23,6 @@ htmlcov/
 *.log
 tmp/
 temp/
+
+# Vector database local storage
+data/

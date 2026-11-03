@@ -11,10 +11,18 @@ export const playlistService = {
     return response.data;
   },
 
-  importPlaylist: async (youtubeUrl, customTitle) => {
+  importPlaylist: async (youtubeUrl, customTitle = undefined, category = undefined) => {
     const response = await apiClient.post('/playlists/import', {
       youtube_url: youtubeUrl,
       custom_title: customTitle,
+      category: category,
+    });
+    return response.data;
+  },
+
+  addVideoToPlaylist: async (playlistId, youtubeUrl) => {
+    const response = await apiClient.post(`/playlists/${playlistId}/add-video`, {
+      youtube_url: youtubeUrl
     });
     return response.data;
   },

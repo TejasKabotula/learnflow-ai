@@ -13,6 +13,8 @@ class PlaylistBase(BaseModel):
     youtube_url: str
     title: str
     description: Optional[str] = None
+    category: Optional[str] = "General"
+    thumbnail_url: Optional[str] = None
     videos: List[Video] = []
 
 class PlaylistCreate(PlaylistBase):
@@ -21,6 +23,10 @@ class PlaylistCreate(PlaylistBase):
 class PlaylistImportRequest(BaseModel):
     youtube_url: str
     custom_title: Optional[str] = None
+    category: Optional[str] = "General"
+
+class AddVideoToPlaylistRequest(BaseModel):
+    youtube_url: str
 
 class PlaylistResponse(PlaylistBase):
     id: str

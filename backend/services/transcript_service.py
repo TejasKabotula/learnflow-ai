@@ -168,12 +168,11 @@ class TranscriptService:
             if p_text:
                 clean_piece = p_text.replace('\n', ' ')
                 full_text_pieces.append(clean_piece)
-                if len(segments) < 100:
-                    segments.append({
-                        "start": int(p_start),
-                        "duration": int(p_dur),
-                        "text": p_text.strip()
-                    })
+                segments.append({
+                    "start": int(p_start),
+                    "duration": int(p_dur),
+                    "text": p_text.strip()
+                })
 
         full_text = " ".join(full_text_pieces)
         full_text = re.sub(r'\s+', ' ', full_text).strip()
@@ -191,33 +190,77 @@ class TranscriptService:
             "strategy": "youtube_api"
         }
 
+    @staticmethod
+    def _vtt_time_to_seconds(time_str: str) -> int:
+        try:
+            parts = time_str.strip().split(':')
+            if len(parts) == 3:
+                h, m, s = parts
+                return int(h) * 3600 + int(m) * 60 + int(float(s))
+            elif len(parts) == 2:
+                m, s = parts
+                return int(m) * 60 + int(float(s))
+            return int(float(parts[0]))
+        except Exception:
+            return 0
+
+    @staticmethod
+    def _parse_vtt(text: str) -> tuple[str, List[Dict[str, Any]]]:
+        lines = text.split('\n')
+        segments = []
+        current_start = None
+        current_dur = 0
+        current_text = []
+        
+        for line in lines:
+            line = line.strip()
+            if not line or line.startswith('WEBVTT') or line.startswith('Kind:') or line.startswith('Language:'):
+                continue
+            
+            if '-->' in line:
+                # Save previous segment if exists
+                if current_start is not None and current_text:
+                    joined_text = " ".join(current_text).strip()
+                    if joined_text and (not segments or segments[-1]["text"] != joined_text):
+                        segments.append({
+                            "start": current_start,
+                            "duration": max(1, current_dur),
+                            "text": joined_text
+                        })
+                current_text = []
+                try:
+                    time_parts = line.split('-->')
+                    start_str = time_parts[0].strip().split(' ')[0]
+                    end_str = time_parts[1].strip().split(' ')[0]
+                    current_start = TranscriptService._vtt_time_to_seconds(start_str)
+                    end_sec = TranscriptService._vtt_time_to_seconds(end_str)
+                    current_dur = max(1, end_sec - current_start)
+                except Exception:
+                    current_start = None
+                continue
+
+            # Clean markup tags
+            cleaned = re.sub(r'<[^>]+>', '', line)
+            if cleaned and not re.match(r'^\d+$', cleaned):
+                current_text.append(cleaned)
+
+        if current_start is not None and current_text:
+            joined_text = " ".join(current_text).strip()
+            if joined_text and (not segments or segments[-1]["text"] != joined_text):
+                segments.append({
+                    "start": current_start,
+                    "duration": max(1, current_dur),
+                    "text": joined_text
+                })
+
+        full_text = " ".join(s["text"] for s in segments)
+        full_text = re.sub(r'\s+', ' ', full_text).strip()
+        return full_text, segments
 
     @staticmethod
     def _clean_vtt(text: str) -> str:
-        lines = text.split('\n')
-        clean_lines = []
-        for line in lines:
-            line = line.strip()
-            if not line or line.startswith('WEBVTT') or line.startswith('Kind:') or line.startswith('Language:') or '-->' in line:
-                continue
-            # Remove HTML-like tags e.g. <c>
-            line = re.sub(r'<[^>]+>', '', line)
-            # Remove positioning e.g. align:start
-            if ':' in line and not bool(re.search(r'[a-zA-Z]', line)): 
-                continue
-            # Skip pure numbers (sequence numbers)
-            if re.match(r'^\d+$', line):
-                continue
-            clean_lines.append(line)
-        
-        # Deduplicate sequential lines (common in auto-generated youtube VTT)
-        dedup_lines = []
-        for line in clean_lines:
-            if not dedup_lines or dedup_lines[-1] != line:
-                dedup_lines.append(line)
-                
-        final_text = " ".join(dedup_lines)
-        return re.sub(r'\s+', ' ', final_text).strip()
+        full_text, _ = TranscriptService._parse_vtt(text)
+        return full_text
 
     @staticmethod
     def _get_via_ytdlp_subs(clean_id: str, meta: Dict[str, Any]) -> Dict[str, Any]:
@@ -250,7 +293,7 @@ class TranscriptService:
             with open(sub_file, 'r', encoding='utf-8') as f:
                 raw_text = f.read()
                 
-            clean_text = TranscriptService._clean_vtt(raw_text)
+            clean_text, segments = TranscriptService._parse_vtt(raw_text)
             if not clean_text:
                 raise Exception("yt-dlp subtitles resulted in empty text.")
                 
@@ -260,7 +303,7 @@ class TranscriptService:
                 "thumbnail_url": meta["thumbnail_url"],
                 "author": meta["author_name"],
                 "transcript": clean_text,
-                "segments": [],
+                "segments": segments,
                 "strategy": "yt_dlp_subtitles"
             }
 

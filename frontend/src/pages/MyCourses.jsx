@@ -114,14 +114,14 @@ export default function MyCourses() {
   // Typography Cover Generator
   const TypographyCover = ({ title, index }) => {
     const colors = [
-      'from-blue-500/20 to-purple-600/20',
+      'from-violet-500/20 to-purple-600/20',
       'from-emerald-500/20 to-teal-600/20',
       'from-orange-500/20 to-red-600/20',
       'from-pink-500/20 to-rose-600/20',
-      'from-indigo-500/20 to-cyan-600/20'
+      'from-indigo-500/20 to-violet-600/20'
     ];
     const borderColors = [
-      'border-blue-500/30',
+      'border-violet-500/30',
       'border-emerald-500/30',
       'border-orange-500/30',
       'border-pink-500/30',
@@ -242,8 +242,34 @@ export default function MyCourses() {
               >
                 {/* Clickable link area */}
                 <Link to={`/playlist/${playlist.id}`} className="flex flex-col md:flex-row md:items-center gap-6 flex-1 min-w-0">
-                  {/* Typography Cover */}
-                  <TypographyCover title={playlist.title} index={idx} />
+                  {/* Course Thumbnail Image with fallback */}
+                  {(() => {
+                    const thumb = playlist.thumbnail_url 
+                      || (playlist.videos && playlist.videos[0]?.thumbnail_url)
+                      || (playlist.videos && playlist.videos[0]?.video_id ? `https://img.youtube.com/vi/${playlist.videos[0].video_id}/hqdefault.jpg` : null);
+                    
+                    if (thumb) {
+                      return (
+                        <div className="w-32 h-20 sm:w-36 sm:h-22 shrink-0 rounded-xl overflow-hidden bg-[var(--bg-canvas)] border border-[var(--border-subtle)] relative group-hover:scale-[1.02] transition-transform shadow-xs flex items-center justify-center">
+                          <img
+                            src={thumb}
+                            alt={playlist.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              if (e.currentTarget.nextSibling) {
+                                e.currentTarget.nextSibling.style.display = 'flex';
+                              }
+                            }}
+                          />
+                          <div style={{ display: 'none' }} className="w-full h-full">
+                            <TypographyCover title={playlist.title} index={idx} />
+                          </div>
+                        </div>
+                      );
+                    }
+                    return <TypographyCover title={playlist.title} index={idx} />;
+                  })()}
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">

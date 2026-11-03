@@ -1,9 +1,20 @@
 import apiClient from './api';
 
 export const aiService = {
-  processVideo: async (youtubeUrl) => {
+  processVideo: async (youtubeUrl, level = 'medium') => {
     const response = await apiClient.post('/ai/process', {
-      youtube_url: youtubeUrl
+      youtube_url: youtubeUrl,
+      level: level
+    });
+    return response.data;
+  },
+
+  regenerateQuiz: async (videoId, difficulty = 'mixed', count = 4, offset = 0) => {
+    const response = await apiClient.post('/ai/regenerate-quiz', {
+      video_id: videoId,
+      difficulty,
+      count,
+      offset
     });
     return response.data;
   },

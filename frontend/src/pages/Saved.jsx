@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Bookmark, Search, Trash2, ExternalLink, Loader2, BookOpen, FileText, HelpCircle, X, ArrowRight, Eye } from 'lucide-react';
 import { Link } from 'react-router';
 import { savedService } from '../services/savedService';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function Saved() {
   const [items, setItems] = useState([]);
@@ -68,7 +70,7 @@ export default function Saved() {
       case 'note':
         return <BookOpen size={16} className="text-emerald-400" />;
       default:
-        return <Bookmark size={16} className="text-blue-400" />;
+        return <Bookmark size={16} className="text-[var(--text-primary)]" />;
     }
   };
 
@@ -236,8 +238,10 @@ export default function Saved() {
 
               <div className="overflow-y-auto flex-1 pr-2 space-y-4">
                 {typeof selectedItem.content === 'string' ? (
-                  <div className="prose prose-invert max-w-none text-sm text-[var(--text-secondary)] whitespace-pre-wrap leading-relaxed">
-                    {selectedItem.content}
+                  <div className="prose prose-invert max-w-none text-sm text-[var(--text-secondary)] leading-relaxed font-sans">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {selectedItem.content}
+                    </ReactMarkdown>
                   </div>
                 ) : Array.isArray(selectedItem.content) ? (
                   <div className="space-y-4">
