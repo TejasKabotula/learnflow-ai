@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, Plus, Search, Trash2, Edit3, Save, Check, Loader2, X, BookOpen, Clock } from 'lucide-react';
+import { FileText, Plus, Search, Trash2, Edit3, Save, Check, Loader2, X, BookOpen, Clock, Eye } from 'lucide-react';
 import { notesService } from '../services/notesService';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function Notes() {
   const [notes, setNotes] = useState([]);
@@ -24,6 +26,7 @@ export default function Notes() {
 
   // Delete modal
   const [noteToDelete, setNoteToDelete] = useState(null);
+  const [viewMode, setViewMode] = useState('preview'); // 'preview' or 'edit'
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
@@ -31,7 +34,7 @@ export default function Notes() {
   }, []);
 
   const fetchNotes = async () => {
-    setLoading(false);
+    setLoading(true);
     try {
       const data = await notesService.getAllNotes();
       setNotes(data);
@@ -277,11 +280,38 @@ export default function Notes() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center bg-[var(--bg-canvas)] border border-[var(--border-medium)] rounded-xl p-1 gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setViewMode('preview')}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                          viewMode === 'preview'
+                            ? 'bg-[var(--text-primary)] text-[var(--text-inverse)] shadow-xs'
+                            : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                        }`}
+                      >
+                        <Eye size={12} />
+                        <span>Preview</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setViewMode('edit')}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                          viewMode === 'edit'
+                            ? 'bg-[var(--text-primary)] text-[var(--text-inverse)] shadow-xs'
+                            : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                        }`}
+                      >
+                        <Edit3 size={12} />
+                        <span>Edit</span>
+                      </button>
+                    </div>
+
                     <button
                       onClick={handleSaveActiveNote}
                       disabled={isSaving || !hasUnsavedChanges}
-                      className="bg-[var(--text-primary)] text-[var(--text-inverse)] hover:opacity-90 disabled:opacity-40 transition-opacity px-4 py-2 rounded-xl text-xs font-medium flex items-center gap-2 shadow-sm"
+                      className="bg-[var(--text-primary)] text-[var(--text-inverse)] hover:opacity-90 disabled:opacity-40 transition-opacity px-4 py-2 rounded-xl text-xs font-medium flex items-center gap-2 shadow-sm cursor-pointer"
                     >
                       {isSaving ? (
                         <Loader2 size={13} className="animate-spin" />
@@ -295,14 +325,22 @@ export default function Notes() {
                   </div>
                 </div>
 
-                {/* Editor Textarea */}
-                <div className="flex-1 p-6 flex flex-col">
-                  <textarea
-                    value={editContent}
-                    onChange={(e) => handleContentChange(e.target.value)}
-                    placeholder="Write your study notes, insights, code snippets, or takeaways here..."
-                    className="w-full flex-1 bg-transparent border-none outline-none text-[var(--text-secondary)] font-mono text-sm resize-none leading-relaxed placeholder:text-[var(--text-tertiary)]"
-                  />
+                {/* Editor or Markdown Preview */}
+                <div className="flex-1 p-6 flex flex-col overflow-y-auto">
+                  {viewMode === 'edit' ? (
+                    <textarea
+                      value={editContent}
+                      onChange={(e) => handleContentChange(e.target.value)}
+                      placeholder="Write your study notes, insights, code snippets, or takeaways here..."
+                      className="w-full flex-1 bg-transparent border-none outline-none text-[var(--text-secondary)] font-mono text-sm resize-none leading-relaxed placeholder:text-[var(--text-tertiary)]"
+                    />
+                  ) : (
+                    <div className="prose prose-invert max-w-none text-sm text-[var(--text-secondary)] leading-relaxed font-sans">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {editContent || '*No content in this note yet. Click Edit to add notes.*'}
+                      </ReactMarkdown>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (

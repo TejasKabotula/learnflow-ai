@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Dict, Any
 from core.database import get_database
 from core.auth import get_current_user
-from schemas.playlist import PlaylistCreate, PlaylistResponse, PlaylistImportRequest
+from schemas.playlist import PlaylistCreate, PlaylistResponse, PlaylistImportRequest, AddVideoToPlaylistRequest
 from services.youtube_service import YouTubeService
 from datetime import datetime, timedelta
 from bson import ObjectId
@@ -97,11 +97,15 @@ async def import_playlist(
     now = datetime.utcnow()
     if existing:
         # Update last_accessed_at and return existing course
+        update_fields = {"last_accessed_at": now}
+        if req.category:
+            update_fields["category"] = req.category
         await db["playlists"].update_one(
             {"_id": existing["_id"]},
-            {"$set": {"last_accessed_at": now}}
+            {"$set": update_fields}
         )
         existing["id"] = str(existing["_id"])
+        existing["category"] = existing.get("category", req.category or "General")
         existing["progress_percentage"] = calculate_progress(existing.get("videos", []))
         return existing
 
@@ -110,6 +114,7 @@ async def import_playlist(
         "youtube_url": parsed["youtube_url"],
         "title": req.custom_title or parsed["title"],
         "description": parsed.get("description", ""),
+        "category": req.category or "General",
         "videos": parsed.get("videos", []),
         "created_at": now,
         "last_accessed_at": now
@@ -150,9 +155,14 @@ async def get_learning_stats(
         if not last_lesson and vids:
             last_lesson = vids[0]
 
+        if last_lesson and "_id" in last_lesson:
+            last_lesson = dict(last_lesson)
+            last_lesson["id"] = str(last_lesson.pop("_id"))
+
         recent_courses.append({
             "id": str(p["_id"]),
             "title": p.get("title"),
+            "category": p.get("category", "General"),
             "videos_count": len(vids),
             "progress_percentage": progress_pct,
             "last_lesson": last_lesson,
@@ -171,7 +181,8 @@ async def get_learning_stats(
     recent_saved_cursor = db["saved_resources"].find({"user_id": current_user["id"]}).sort("created_at", -1).limit(3)
     recent_saved = await recent_saved_cursor.to_list(length=3)
     for s in recent_saved:
-        s["id"] = str(s["_id"])
+        if "_id" in s:
+            s["id"] = str(s.pop("_id"))
 
     return {
         "courses": total_courses,
@@ -216,6 +227,55 @@ async def get_playlist(playlist_id: str, db = Depends(get_database), current_use
         
     playlist["id"] = str(playlist["_id"])
     playlist["progress_percentage"] = calculate_progress(playlist.get("videos", []))
+    return playlist
+
+@router.post("/{playlist_id}/add-video", response_model=PlaylistResponse)
+async def add_video_to_playlist(
+    playlist_id: str,
+    req: AddVideoToPlaylistRequest,
+    db = Depends(get_database),
+    current_user: dict = Depends(get_current_user)
+):
+    """Appends a single YouTube video to an existing course / playlist."""
+    try:
+        obj_id = ObjectId(playlist_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid playlist ID format")
+
+    playlist = await db["playlists"].find_one({"_id": obj_id, "user_id": current_user["id"]})
+    if not playlist:
+        raise HTTPException(status_code=404, detail="Playlist / course not found")
+
+    try:
+        parsed = YouTubeService.parse_youtube_resource(req.youtube_url)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to extract video details: {str(e)}")
+
+    existing_videos = playlist.get("videos", [])
+    existing_video_ids = {v.get("video_id") for v in existing_videos}
+
+    new_videos = parsed.get("videos", [])
+    for v in new_videos:
+        if v.get("video_id") not in existing_video_ids:
+            existing_videos.append(v)
+            existing_video_ids.add(v.get("video_id"))
+
+    now = datetime.utcnow()
+    progress_pct = calculate_progress(existing_videos)
+
+    await db["playlists"].update_one(
+        {"_id": obj_id},
+        {"$set": {
+            "videos": existing_videos,
+            "progress_percentage": progress_pct,
+            "last_accessed_at": now
+        }}
+    )
+
+    playlist["id"] = str(playlist["_id"])
+    playlist["videos"] = existing_videos
+    playlist["progress_percentage"] = progress_pct
+    playlist["category"] = playlist.get("category", "General")
     return playlist
 
 @router.post("/{playlist_id}/toggle-video/{video_id}")

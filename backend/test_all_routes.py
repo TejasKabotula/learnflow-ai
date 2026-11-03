@@ -244,8 +244,38 @@ def test_api():
     assert len(search_results["notes"]) > 0 or len(search_results["saved"]) > 0 or len(search_results["quizzes"]) > 0
     print(f"✅ Global Search found: {len(search_results['courses'])} course(s), {len(search_results['notes'])} note(s), {len(search_results['saved'])} saved item(s), {len(search_results['quizzes'])} quiz(zes)")
 
-    # 16. Clean up: Delete quiz, note, saved item, playlist
-    print("\n[16] Cleaning up test resources...")
+    # 16. Chat with This Video using RAG (/api/v1/ai/chat)
+    print("\n[16] Testing RAG Chat (/api/v1/ai/chat)...")
+    chat_payload = {
+        "video_id": first_vid_id,
+        "question": "What is the primary topic of this video?",
+        "playlist_id": playlist_id,
+        "history": []
+    }
+    r = requests.post(f"{BASE_URL}/api/v1/ai/chat", json=chat_payload, headers=headers)
+    assert r.status_code == 200, f"Chat failed: {r.status_code} {r.text}"
+    chat_resp = r.json()
+    assert "answer" in chat_resp and len(chat_resp["answer"]) > 0
+    assert "citations" in chat_resp
+    print(f"✅ RAG Chat answered with {len(chat_resp['citations'])} citation(s): '{chat_resp['answer'][:100]}...'")
+
+    # Verify Chat History retrieval
+    print(f"\n[16b] Testing GET /api/v1/ai/chat/history/{first_vid_id}...")
+    r = requests.get(f"{BASE_URL}/api/v1/ai/chat/history/{first_vid_id}", headers=headers)
+    assert r.status_code == 200
+    history_resp = r.json()
+    assert len(history_resp["messages"]) >= 2  # user and assistant
+    print(f"✅ Retrieved chat history with {len(history_resp['messages'])} message(s).")
+
+    # Clear Chat History
+    print(f"\n[16c] Testing DELETE /api/v1/ai/chat/history/{first_vid_id}...")
+    r = requests.delete(f"{BASE_URL}/api/v1/ai/chat/history/{first_vid_id}", headers=headers)
+    assert r.status_code == 200
+    assert r.json().get("success") == True
+    print("✅ Chat history cleanly cleared.")
+
+    # 17. Clean up: Delete quiz, note, saved item, playlist
+    print("\n[17] Cleaning up test resources...")
     requests.delete(f"{BASE_URL}/api/v1/quizzes/{quiz_id}", headers=headers)
     requests.delete(f"{BASE_URL}/api/v1/saved/{saved_id}", headers=headers)
     requests.delete(f"{BASE_URL}/api/v1/notes/{note_id}", headers=headers)
@@ -253,7 +283,7 @@ def test_api():
     print("✅ All created test resources cleanly deleted.")
 
     print("\n" + "=" * 60)
-    print("🎉 ALL 16 COMPREHENSIVE SYSTEM TESTS PASSED WITH 100% SUCCESS!")
+    print("🎉 ALL 17 COMPREHENSIVE SYSTEM TESTS PASSED WITH 100% SUCCESS!")
     print("=" * 60)
 
 if __name__ == "__main__":
