@@ -38,3 +38,19 @@ app.include_router(search.router, prefix=f"{settings.API_V1_STR}/search", tags=[
 @app.get("/")
 def root():
     return {"message": f"Welcome to {settings.PROJECT_NAME} API"}
+
+@app.get("/health")
+async def health():
+    try:
+        from core.database import db
+        if db.client:
+            await db.client.admin.command('ping')
+            db_status = "connected"
+        else:
+            db_status = "uninitialized"
+    except Exception as e:
+        db_status = f"error: {str(e)}"
+    return {
+        "status": "healthy",
+        "database": db_status
+    }
