@@ -1,6 +1,6 @@
 import { createContext, useState, useEffect, useContext } from 'react';
 import axios from 'axios';
-import apiClient from '../services/api';
+import apiClient, { API_BASE_URL } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }) => {
     formData.append('username', email);
     formData.append('password', password);
     
-    const response = await axios.post('http://localhost:8000/api/v1/auth/login', formData, {
+    const response = await axios.post(`${API_BASE_URL}/auth/login`, formData, {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
     
@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (email, password, fullName) => {
-    await axios.post('http://localhost:8000/api/v1/auth/register', {
+    await axios.post(`${API_BASE_URL}/auth/register`, {
       email,
       password,
       full_name: fullName
