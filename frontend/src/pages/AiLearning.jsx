@@ -876,7 +876,7 @@ Source: https://youtube.com/watch?v=${processedData.video_id}
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-[10px] font-semibold text-[var(--color-accent-primary)] uppercase tracking-wider px-2 py-0.5 rounded-md bg-[var(--color-accent-primary)]/10">
-                    Synthesized Lesson
+                    {processedData?.strategy === 'curriculum_synthesis' ? 'Curriculum AI Synthesized' : 'Synthesized Lesson'}
                   </span>
                   <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-[var(--text-secondary)]">
                     Level: {explanationLevel.toUpperCase()}
