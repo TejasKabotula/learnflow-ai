@@ -133,7 +133,7 @@ export default function Register() {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     className="w-full bg-[var(--bg-canvas)] border border-[var(--border-medium)] rounded-xl pl-11 pr-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--color-accent-primary)] focus:ring-1 focus:ring-[var(--color-accent-primary)] transition-all"
-                    placeholder="Tejas Kumar"
+                    placeholder="Student Name"
                   />
                 </div>
               </div>
